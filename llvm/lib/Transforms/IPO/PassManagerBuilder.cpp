@@ -59,6 +59,20 @@ PassManagerBuilder::PassManagerBuilder() {
     MergeFunctions = false;
     DivergentTarget = false;
     CallGraphProfile = true;
+
+    / Initialization of the global cryptographically
+    // secure pseudo-random generator
+    if(!AesSeed.empty()) {
+      if(!llvm::cryptoutils->prng_seed(AesSeed.c_str())) {
+        exit(1);
+      }
+    }
+
+    //random generator
+    if(!Seed.empty()) {
+      if(!llvm::cryptoutils->prng_seed(Seed.c_str()))
+        exit(1);
+    }
 }
 
 PassManagerBuilder::~PassManagerBuilder() {
@@ -294,6 +308,14 @@ void PassManagerBuilder::populateModulePassManager(
   // Allow forcing function attributes as a debugging and tuning aid.
   MPM.add(createForceFunctionAttrsLegacyPass());
 
+  MPM.add(createSplitBasicBlock(Split));
+  MPM.add(createBogus(BogusControlFlow));
+  #if LLVM_VERSION_MAJOR >= 9
+    MPM.add(createLowerSwitchPass());
+  #endif
+  MPM.add(createFlattening(Flattening));
+  MPM.add(createStringObfuscation(StringObf));
+
   // If all optimizations are disabled, just run the always-inline pass and,
   // if enabled, the function merging pass.
   if (OptLevel == 0) {
@@ -443,6 +465,8 @@ void PassManagerBuilder::populateModulePassManager(
   // passes to avoid re-sinking, but before SimplifyCFG because it can allow
   // flattening of blocks.
   MPM.add(createDivRemPairsPass());
+
+  MPM.add(createSubstitution(Substitution));
 
   // LoopSink (and other loop passes since the last simplifyCFG) might have
   // resulted in single-entry-single-exit or empty blocks. Clean up the CFG.
