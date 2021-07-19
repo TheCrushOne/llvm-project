@@ -60,7 +60,7 @@ PassManagerBuilder::PassManagerBuilder() {
     DivergentTarget = false;
     CallGraphProfile = true;
 
-    / Initialization of the global cryptographically
+    // Initialization of the global cryptographically
     // secure pseudo-random generator
     if(!AesSeed.empty()) {
       if(!llvm::cryptoutils->prng_seed(AesSeed.c_str())) {
