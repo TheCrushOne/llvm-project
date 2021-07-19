@@ -452,8 +452,8 @@ struct BogusControlFlow : public FunctionPass {
             case 0:                                    // do nothing
               break;
             case 1:
-              op = UnaryOperator::CreateFNeg(i->getOperand(0), *var, &*i);
-              op1 = BinaryOperator::Create(Instruction::FAdd, op,
+              op1 = BinaryOperator::Create(Instruction::FAdd,
+                                           UnaryOperator::CreateFNeg(i->getOperand(0), *var, &*i),
                                            i->getOperand(1), "gen", &*i);
               break;
             case 2:

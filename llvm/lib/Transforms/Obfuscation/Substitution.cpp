@@ -219,22 +219,21 @@ void Substitution::addDoubleNeg(BinaryOperator *bo) {
   BinaryOperator *op, *op2 = NULL;
 
   if (bo->getOpcode() == Instruction::Add) {
-    op = BinaryOperator::CreateNeg(bo->getOperand(0), "", bo);
-    op2 = BinaryOperator::CreateNeg(bo->getOperand(1), "", bo);
-    op = BinaryOperator::Create(Instruction::Add, op, op2, "", bo);
-    op = BinaryOperator::CreateNeg(op, "", bo);
+    bo->replaceAllUsesWith(BinaryOperator::CreateNeg(
+        BinaryOperator::Create(Instruction::Add,
+                               BinaryOperator::CreateNeg(bo->getOperand(0), "", bo),
+                               BinaryOperator::CreateNeg(bo->getOperand(1), "", bo), "", bo), "", bo));
 
     // Check signed wrap
     // op->setHasNoSignedWrap(bo->hasNoSignedWrap());
     // op->setHasNoUnsignedWrap(bo->hasNoUnsignedWrap());
   } else {
-    op = UnaryOperator::CreateFNeg(bo->getOperand(0), "", bo);
-    op2 = UnaryOperator::CreateFNeg(bo->getOperand(1), "", bo);
-    op = BinaryOperator::Create(Instruction::FAdd, op, op2, "", bo);
-    op = UnaryOperator::CreateFNeg(op, "", bo);
+    bo->replaceAllUsesWith(UnaryOperator::CreateFNeg(
+        BinaryOperator::Create(Instruction::FAdd,
+                               UnaryOperator::CreateFNeg(bo->getOperand(0), "", bo),
+                               UnaryOperator::CreateFNeg(bo->getOperand(1), "", bo), "", bo), "", bo));
   }
 
-  bo->replaceAllUsesWith(op);
 }
 
 // Implementation of  r = rand (); a = b + r; a = a + c; a = a - r
@@ -310,9 +309,9 @@ void Substitution::subNeg(BinaryOperator *bo) {
     // op->setHasNoSignedWrap(bo->hasNoSignedWrap());
     // op->setHasNoUnsignedWrap(bo->hasNoUnsignedWrap());
   } else {
-    op = UnaryOperator::CreateFNeg(bo->getOperand(1), "", bo);
-    op = BinaryOperator::Create(Instruction::FAdd, bo->getOperand(0), op, "",
-                                bo);
+    op = BinaryOperator::Create(Instruction::FAdd, bo->getOperand(0),
+                                UnaryOperator::CreateFNeg(bo->getOperand(1), "", bo),
+                                "", bo);
   }
 
   bo->replaceAllUsesWith(op);
