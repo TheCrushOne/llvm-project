@@ -31,6 +31,11 @@
 #include "llvm/Transforms/IPO/InferFunctionAttrs.h"
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Instrumentation.h"
+#include "llvm/Transforms/Obfuscation/Substitution.h"
+#include "llvm/Transforms/Obfuscation/Split.h"
+#include "llvm/Transforms/Obfuscation/BogusControlFlow.h"
+#include "llvm/Transforms/Obfuscation/Flattening.h"
+#include "llvm/Transforms/Obfuscation/StringObfuscation.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 #include "llvm/Transforms/Scalar/LICM.h"
@@ -40,6 +45,28 @@
 #include "llvm/Transforms/Vectorize.h"
 
 using namespace llvm;
+
+// Flags for obfuscation
+static cl::opt<bool> Flattening("fla", cl::init(false),
+                                cl::desc("Enable the flattening pass"));
+
+static cl::opt<bool> BogusControlFlow("bcf", cl::init(false),
+                                      cl::desc("Enable bogus control flow"));
+
+static cl::opt<bool> Substitution("sub", cl::init(false),
+                                  cl::desc("Enable instruction substitutions"));
+
+static cl::opt<std::string> AesSeed("aesSeed", cl::init(""),
+                                    cl::desc("seed for the AES-CTR PRNG"));
+
+static cl::opt<bool> Split("split", cl::init(false),
+                           cl::desc("Enable basic block splitting"));
+
+static cl::opt<std::string> Seed("seed", cl::init(""),
+                           cl::desc("seed for the random"));
+
+static cl::opt<bool> StringObf("sobf", cl::init(false),
+                           cl::desc("Enable the string obfuscation"));
 
 PassManagerBuilder::PassManagerBuilder() {
     OptLevel = 2;

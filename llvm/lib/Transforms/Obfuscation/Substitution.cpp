@@ -13,6 +13,7 @@
 
 #include "llvm/Transforms/Obfuscation/Substitution.h"
 #include "llvm/IR/Intrinsics.h"
+#include "llvm/IR/Constants.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Obfuscation/Utils.h"

@@ -14,6 +14,7 @@
 #include "llvm/Transforms/Obfuscation/Flattening.h"
 #include "llvm/Transforms/Obfuscation/CryptoUtils.h"
 #include "llvm/Transforms/Utils.h"
+#include "llvm/IR/Constants.h"
 
 #define DEBUG_TYPE "flattening"
 

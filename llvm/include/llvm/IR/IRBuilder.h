@@ -1715,6 +1715,22 @@ public:
     return CreateAlignedLoad(Ty, Ptr, MaybeAlign(), isVolatile, Name);
   }
 
+  // Deprecated [opaque pointer types]
+  LoadInst *CreateLoad(Value *Ptr, const char *Name) {
+    return CreateLoad(Ptr->getType()->getPointerElementType(), Ptr, Name);
+  }
+
+  // Deprecated [opaque pointer types]
+  LoadInst *CreateLoad(Value *Ptr, const Twine &Name = "") {
+    return CreateLoad(Ptr->getType()->getPointerElementType(), Ptr, Name);
+  }
+
+  // Deprecated [opaque pointer types]
+  LoadInst *CreateLoad(Value *Ptr, bool isVolatile, const Twine &Name = "") {
+    return CreateLoad(Ptr->getType()->getPointerElementType(), Ptr, isVolatile,
+                      Name);
+  }
+
   StoreInst *CreateStore(Value *Val, Value *Ptr, bool isVolatile = false) {
     return CreateAlignedStore(Val, Ptr, MaybeAlign(), isVolatile);
   }
@@ -1776,6 +1792,11 @@ public:
     }
 
     return Insert(new AtomicRMWInst(Op, Ptr, Val, *Align, Ordering, SSID));
+  }
+
+  Value *CreateGEP(Value *Ptr, ArrayRef<Value *> IdxList,
+                   const Twine &Name = "") {
+    return CreateGEP(nullptr, Ptr, IdxList, Name);
   }
 
   Value *CreateGEP(Type *Ty, Value *Ptr, ArrayRef<Value *> IdxList,
