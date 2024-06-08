@@ -24,7 +24,7 @@ using namespace llvm;
 STATISTIC(Flattened, "Functions flattened");
 
 namespace {
-struct Flattening : public FunctionPass {
+struct Flattening : public IFlattening {
   static char ID; // Pass identification, replacement for typeid
   bool flag;
 
@@ -38,7 +38,7 @@ struct Flattening : public FunctionPass {
 
 char Flattening::ID = 0;
 static RegisterPass<Flattening> X("flattening", "Call graph flattening");
-Pass *llvm::createFlattening(bool flag) { return new Flattening(flag); }
+IFlattening&& llvm::createFlattening(bool flag) { return std::move(Flattening(flag)); }
 
 bool Flattening::runOnFunction(Function &F) {
   Function *tmp = &F;

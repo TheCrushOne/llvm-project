@@ -127,6 +127,11 @@
 #include "llvm/Transforms/Vectorize/LoopVectorize.h"
 #include "llvm/Transforms/Vectorize/SLPVectorizer.h"
 #include "llvm/Transforms/Vectorize/VectorCombine.h"
+#include "llvm/Transforms/Obfuscation/Substitution.h"
+#include "llvm/Transforms/Obfuscation/Split.h"
+#include "llvm/Transforms/Obfuscation/BogusControlFlow.h"
+#include "llvm/Transforms/Obfuscation/Flattening.h"
+#include "llvm/Transforms/Obfuscation/StringObfuscation.h"
 
 using namespace llvm;
 
@@ -279,6 +284,28 @@ static cl::opt<AttributorRunOption> AttributorRun(
                clEnumValN(AttributorRunOption::NONE, "none",
                           "disable attributor runs")));
 
+// Flags for obfuscation
+static cl::opt<bool> Flattening("fla", cl::init(false),
+                                cl::desc("Enable the flattening pass"));
+
+static cl::opt<bool> BogusControlFlow("bcf", cl::init(false),
+                                      cl::desc("Enable bogus control flow"));
+
+static cl::opt<bool> Substitution("sub", cl::init(false),
+                                  cl::desc("Enable instruction substitutions"));
+
+static cl::opt<std::string> AesSeed("aesSeed", cl::init(""),
+                                    cl::desc("seed for the AES-CTR PRNG"));
+
+static cl::opt<bool> Split("split", cl::init(false),
+                           cl::desc("Enable basic block splitting"));
+
+static cl::opt<std::string> Seed("seed", cl::init(""),
+                           cl::desc("seed for the random"));
+
+static cl::opt<bool> StringObf("sobf", cl::init(false),
+                           cl::desc("Enable the string obfuscation"));
+
 PipelineTuningOptions::PipelineTuningOptions() {
   LoopInterleaving = true;
   LoopVectorization = true;
@@ -291,6 +318,21 @@ PipelineTuningOptions::PipelineTuningOptions() {
   MergeFunctions = EnableMergeFunctions;
   InlinerThreshold = -1;
   EagerlyInvalidateAnalyses = EnableEagerlyInvalidateAnalyses;
+
+
+  // Initialization of the global cryptographically
+  // secure pseudo-random generator
+  if(!AesSeed.empty()) {
+    if(!llvm::cryptoutils->prng_seed(AesSeed.c_str())) {
+      exit(1);
+    }
+  }
+
+  //random generator
+  if(!Seed.empty()) {
+    if(!llvm::cryptoutils->prng_seed(Seed.c_str()))
+      exit(1);
+  }
 }
 
 namespace llvm {
@@ -1258,6 +1300,11 @@ PassBuilder::buildModuleOptimizationPipeline(OptimizationLevel Level,
   // FIXME: Is this really an optimization rather than a canonicalization?
   MPM.addPass(ReversePostOrderFunctionAttrsPass());
 
+  //MPM.addPass(std::move(createSplitBasicBlock(Split)));
+  //MPM.addPass(std::move(createBogus(BogusControlFlow)));
+  MPM.addPass(std::move(createFlattening(Flattening)));
+  //MPM.addPass(std::move(createStringObfuscation(StringObf)));
+
   // Do a post inline PGO instrumentation and use pass. This is a context
   // sensitive PGO pass. We don't want to do this in LTOPreLink phrase as
   // cross-module inline has not been done yet. The context sensitive
@@ -1380,6 +1427,8 @@ PassBuilder::buildModuleOptimizationPipeline(OptimizationLevel Level,
   // ordering here.
   MPM.addPass(GlobalDCEPass());
   MPM.addPass(ConstantMergePass());
+
+  //MPM.addPass(createSubstitution(Substitution));
 
   if (PTO.CallGraphProfile && !LTOPreLink)
     MPM.addPass(CGProfilePass());

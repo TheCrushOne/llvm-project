@@ -678,6 +678,6 @@ char BogusControlFlow::ID = 0;
 static RegisterPass<BogusControlFlow> X("boguscf",
                                         "inserting bogus control flow");
 
-Pass *llvm::createBogus() { return new BogusControlFlow(); }
+FunctionPass&& llvm::createBogus() { return std::move(BogusControlFlow()); }
 
-Pass *llvm::createBogus(bool flag) { return new BogusControlFlow(flag); }
+FunctionPass&& llvm::createBogus(bool flag) { return std::move(BogusControlFlow(flag)); }

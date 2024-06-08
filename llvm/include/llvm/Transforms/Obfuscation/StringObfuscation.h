@@ -2,5 +2,10 @@
 #include "llvm/Pass.h"
 
 namespace llvm {
-      Pass* createStringObfuscation(bool flag);
+    class IStringObfuscation: public llvm::ModulePass {
+    public:
+        virtual bool runOnModule(Module &M) {}
+    };
+
+    IStringObfuscation&& createStringObfuscation(bool flag);
 }

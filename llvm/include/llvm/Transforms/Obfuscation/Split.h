@@ -25,7 +25,7 @@
 #include "llvm/Transforms/Utils/Local.h" // For DemoteRegToStack and DemotePHIToStack
 
 namespace llvm {
-Pass *createSplitBasicBlock(bool flag);
+FunctionPass&& createSplitBasicBlock(bool flag);
 }
 
 #endif

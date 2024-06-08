@@ -44,8 +44,8 @@ struct SplitBasicBlock : public FunctionPass {
 char SplitBasicBlock::ID = 0;
 static RegisterPass<SplitBasicBlock> X("splitbbl", "BasicBlock splitting");
 
-Pass *llvm::createSplitBasicBlock(bool flag) {
-  return new SplitBasicBlock(flag);
+FunctionPass&& llvm::createSplitBasicBlock(bool flag) {
+  return std::move(SplitBasicBlock(flag));
 }
 
 bool SplitBasicBlock::runOnFunction(Function &F) {

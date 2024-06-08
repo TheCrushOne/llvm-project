@@ -26,7 +26,12 @@
 #include "llvm/Transforms/Utils/Local.h" // For DemoteRegToStack and DemotePHIToStack
 
 namespace llvm {
-Pass *createFlattening(bool flag);
+class IFlattening : public FunctionPass {
+public:
+	virtual bool runOnFunction(Function &F) {}
+};
+
+IFlattening&& createFlattening(bool flag);
 } // namespace llvm
 
 #endif
