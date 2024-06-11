@@ -33,8 +33,8 @@ class StringObfuscationPass: public IStringObfuscation {
 public:
     static char ID; // pass identification
     bool is_flag = false;
-    StringObfuscationPass() : ModulePass(ID) {}
-    StringObfuscationPass(bool flag) : ModulePass(ID) {
+    StringObfuscationPass() : IStringObfuscation(ID) {}
+    StringObfuscationPass(bool flag) : IStringObfuscation(ID) {
         is_flag = flag;
     }
 

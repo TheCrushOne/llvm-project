@@ -724,6 +724,7 @@ private:
   /// This is deliberately private because we have implemented an adequate set
   /// of functions to modify the list, including Function::splice(),
   /// Function::erase(), Function::insert() etc.
+public:
   const BasicBlockListType &getBasicBlockList() const { return BasicBlocks; }
         BasicBlockListType &getBasicBlockList()       { return BasicBlocks; }
 
@@ -731,7 +732,7 @@ private:
     return &Function::BasicBlocks;
   }
 
-public:
+
   const BasicBlock       &getEntryBlock() const   { return front(); }
         BasicBlock       &getEntryBlock()         { return front(); }
 

@@ -256,6 +256,14 @@
 #include "llvm/Transforms/Vectorize/SLPVectorizer.h"
 #include "llvm/Transforms/Vectorize/VectorCombine.h"
 #include <optional>
+#include "llvm/Passes/Obfuscation/BogusControlFlow.h"
+#include "llvm/Passes/Obfuscation/Flattening.h"
+#include "llvm/Passes/Obfuscation/SplitBasicBlock.h"
+#include "llvm/Passes/Obfuscation/Substitution.h"
+#include "llvm/Passes/Obfuscation/StringEncryption.h"
+#include "llvm/Passes/Obfuscation/IndirectGlobalVariable.h"
+#include "llvm/Passes/Obfuscation/IndirectBranch.h"
+#include "llvm/Passes/Obfuscation/IndirectCall.h"
 
 using namespace llvm;
 
@@ -396,6 +404,22 @@ public:
 
 } // namespace
 
+
+// Flags for obfuscation
+
+static cl::opt<bool> s_obf_split("split", cl::init(false), cl::desc("SplitBasicBlock: split_num=3(init)"));
+static cl::opt<bool> s_obf_sobf("sobf", cl::init(false), cl::desc("String Obfuscation"));
+static cl::opt<bool> s_obf_fla("fla", cl::init(false), cl::desc("Flattening"));
+static cl::opt<bool> s_obf_sub("sub", cl::init(false), cl::desc("Substitution: sub_loop"));
+static cl::opt<bool> s_obf_bcf("bcf", cl::init(false), cl::desc("BogusControlFlow: application number -bcf_loop=x must be x > 0"));
+static cl::opt<bool> s_obf_ibr("ibr", cl::init(false), cl::desc("Indirect Branch"));
+static cl::opt<bool> s_obf_igv("igv", cl::init(false), cl::desc("Indirect Global Variable"));
+static cl::opt<bool> s_obf_icall("icall", cl::init(false), cl::desc("Indirect Call"));
+static cl::opt<bool> s_obf_fn_name_cmd("fncmd", cl::init(false), cl::desc("use function name control obfuscation(_ + command + _ | example: function_fla_bcf_)"));
+static cl::opt<std::string> AesSeed("aesSeed", cl::init(""), cl::desc("seed for the AES-CTR PRNG"));
+static cl::opt<std::string> Seed("seed", cl::init(""), cl::desc("seed for the random"));
+
+
 PassBuilder::PassBuilder(TargetMachine *TM, PipelineTuningOptions PTO,
                          std::optional<PGOOptions> PGOOpt,
                          PassInstrumentationCallbacks *PIC)
@@ -431,6 +455,43 @@ PassBuilder::PassBuilder(TargetMachine *TM, PipelineTuningOptions PTO,
   PIC->addClassToPassName(decltype(CREATE_PASS)::name(), NAME);
 #include "PassRegistry.def"
   }
+
+
+  // Initialization of the global cryptographically
+  // secure pseudo-random generator
+  if(!AesSeed.empty()) {
+    if(!llvm::cryptoutils->prng_seed(AesSeed.c_str())) {
+      exit(1);
+    }
+  }
+
+  //random generator
+  if(!Seed.empty()) {
+    if(!llvm::cryptoutils->prng_seed(Seed.c_str()))
+      exit(1);
+  }
+
+  this->registerPipelineStartEPCallback(
+      [](llvm::ModulePassManager &MPM,
+         llvm::OptimizationLevel Level) {
+        outs() << "run.PipelineStartEPCallback\n";
+        obf_function_name_cmd = s_obf_fn_name_cmd;
+        if (obf_function_name_cmd) {
+          outs() << "enable function name control obfuscation(_ + command + _ | example: function_fla_)\n";
+        }
+        MPM.addPass(StringEncryptionPass(s_obf_sobf));
+        llvm::FunctionPassManager FPM;
+        FPM.addPass(IndirectCallPass(s_obf_icall));
+        FPM.addPass(SplitBasicBlockPass(s_obf_split));
+        FPM.addPass(FlatteningPass(s_obf_fla));
+        FPM.addPass(SubstitutionPass(s_obf_sub));
+        FPM.addPass(BogusControlFlowPass(s_obf_bcf));
+        MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
+        MPM.addPass(IndirectBranchPass(s_obf_ibr));
+        MPM.addPass(IndirectGlobalVariablePass(s_obf_igv));
+        MPM.addPass(RewriteSymbolPass());
+      }
+  );
 }
 
 void PassBuilder::registerModuleAnalyses(ModuleAnalysisManager &MAM) {

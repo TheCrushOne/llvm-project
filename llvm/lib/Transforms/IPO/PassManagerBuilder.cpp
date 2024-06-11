@@ -31,11 +31,6 @@
 #include "llvm/Transforms/IPO/InferFunctionAttrs.h"
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Instrumentation.h"
-#include "llvm/Transforms/Obfuscation/Substitution.h"
-#include "llvm/Transforms/Obfuscation/Split.h"
-#include "llvm/Transforms/Obfuscation/BogusControlFlow.h"
-#include "llvm/Transforms/Obfuscation/Flattening.h"
-#include "llvm/Transforms/Obfuscation/StringObfuscation.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 #include "llvm/Transforms/Scalar/LICM.h"
@@ -300,13 +295,9 @@ void PassManagerBuilder::populateModulePassManager(
   // Allow forcing function attributes as a debugging and tuning aid.
   MPM.add(createForceFunctionAttrsLegacyPass());
 
-  //MPM.add(createSplitBasicBlock(Split));
-  //MPM.add(createBogus(BogusControlFlow));
   #if LLVM_VERSION_MAJOR >= 9
     MPM.add(createLowerSwitchPass());
   #endif
-  //MPM.add(createFlattening(Flattening));
-  //MPM.add(createStringObfuscation(StringObf));
 
   // If all optimizations are disabled, just run the always-inline pass and,
   // if enabled, the function merging pass.
